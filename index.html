@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Roulette</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .roulette-container {
+            position: relative;
+            width: 450px;
+            height: 450px;
+        }
+
+        /* The Pointer Arrow pointing DOWN at the top center */
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 30px solid #ff4444;
+            z-index: 10;
+            filter: drop-shadow(0px 4px 5px rgba(0,0,0,0.5));
+        }
+
+        canvas {
+            border-radius: 50%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 0 10px #333;
+            transition: transform 4s cubic-bezier(0.1, 0.8, 0.1, 1);
+        }
+
+        .spin-btn {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 65, 108, 0.4);
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .spin-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .spin-btn:disabled {
+            background: #555;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .result-display {
+            margin-top: 25px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            min-height: 40px;
+            text-align: center;
+        }
+
+        /* Glowing Animation for Mystery Item */
+        .glowing-mystery {
+            color: #ffd700;
+            text-shadow: 0 0 10px #fff, 0 0 20px #ffd700, 0 0 30px #ffaa00, 0 0 40px #ffaa00;
+            animation: pulse-glow 1.5s infinite alternate;
+            display: inline-block;
+        }
+
+        @keyframes pulse-glow {
+            from {
+                transform: scale(1);
+                filter: drop-shadow(0 0 5px rgba(255,215,0,0.6));
+            }
+            to {
+                transform: scale(1.1);
+                filter: drop-shadow(0 0 20px rgba(255,215,0,1));
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Spin the Wheel!</h1>
+
+    <div class="roulette-container">
+        <div class="pointer"></div>
+        <canvas id="wheel" width="450" height="450"></canvas>
+    </div>
+
+    <button class="spin-btn" id="spinBtn">SPIN</button>
+
+    <div class="result-display" id="result">Press SPIN to test your luck!</div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('wheel');
+            const ctx = canvas.getContext('2d');
+            const spinBtn = document.getElementById('spinBtn');
+            const resultDisplay = document.getElementById('result');
+
+            if (!canvas || !ctx) {
+                console.error("Canvas element not found or supported.");
+                return;
+            }
+
+            // Section distribution configurations
+            const items = [
+                { label: "YONO coaster", weight: 20, color: "#1e3d59" },
+                { label: "hand fan", weight: 15, color: "#17b978" },
+                { label: "battery fan", weight: 10, color: "#ff8c94" },
+                { label: "bag pack", weight: 5, color: "#a8df8e" },
+                { label: "🎁 MYSTERY 🎁", weight: 1, color: "#8a2be2" }
+            ];
+
+            const totalSegments = items.reduce((sum, item) => sum + item.weight, 0);
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = canvas.width / 2;
+
+            let currentRotation = 0;
+            let isSpinning = false;
+
+            function drawWheel() {
+                let currentAngle = 0;
+
+                items.forEach(item => {
+                    const angleSize = (item.weight / totalSegments) * 2 * Math.PI;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + angleSize);
+                    ctx.closePath();
+                    
+                    ctx.fillStyle = item.color;
+                    ctx.fill();
+                    ctx.strokeStyle = '#222';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Draw Text Labels inside slices
+                    ctx.save();
+                    ctx.translate(centerX, centerY);
+                    ctx.rotate(currentAngle + angleSize / 2);
+                    ctx.textAlign = "right";
+                    
+                    if(item.label.includes("MY
